@@ -92,6 +92,7 @@ git version 2.53.0
 - [x] Docker 버전 확인
 - [x] Docker 데몬 점검 (`docker info`)
 - [x] Docker 운영 명령 (`images`, `ps -a`, `logs`, `stats`)
+- [x] 컨테이너/이미지 정리 (`docker rm`/`docker rmi`, 의존성 에러 포함)
 - [x] `hello-world` 실행 성공
 - [x] `ubuntu` 컨테이너 내부 진입·명령 수행
 - [x] Dockerfile 작성 → 커스텀 이미지 빌드/실행
@@ -128,6 +129,7 @@ git version 2.53.0
 | 16 | Git 설정 | `git config --global user.name/user.email` 후 각각 재조회 | 설정한 값이 그대로 조회됨(`git config --list`) | [8번](#8-git-설정-및-githubvscode-연동) |
 | 17 | GitHub push 성공 | `git status` + `git log --oneline` | `Your branch is up to date with 'origin/main'`, `git log`에서 `HEAD -> main`과 `origin/main`이 같은 커밋을 가리킴 | [8번](#8-git-설정-및-githubvscode-연동) |
 | 18 | VSCode-GitHub 연동 | VS Code 좌하단 계정 메뉴 스크린샷 | `SeouliteParker (GitHub)` 계정이 연결돼 있고 `Settings Sync is On` 표시 | [8번 스크린샷](#8-git-설정-및-githubvscode-연동) |
+| 19 | 컨테이너/이미지 정리 (`rm`/`rmi`) | 이미지 사용 중인 컨테이너 상태에서 `docker rmi` 시도 → `docker rm -f`로 컨테이너 삭제 → `docker rmi` 재시도 | 첫 시도는 `conflict: ... (must force)` 에러로 거부되고, 컨테이너 삭제 후 재시도하면 `Untagged`/`Deleted`로 성공하며 `docker images`에서 사라짐 | [4번](#4-docker-설치점검운영-명령) |
 
 ---
 
@@ -273,7 +275,31 @@ CONTAINER ID   NAME         CPU %   MEM USAGE / LIMIT     MEM %   NET I/O       
 - **`docker ps` vs `docker ps -a`**: 위 목록은 `-a`로 조회한 것으로, 이미 종료(Exited)된 컨테이너까지 모두 보여줌. 옵션 없는 `docker ps`는 현재 실행 중인 컨테이너만 표시.
 - **`docker info`가 알려주는 것**: 클라이언트뿐 아니라 데몬(Server) 상태까지 보여줌 — 실행 중인 컨테이너 수(1개), 전체 이미지 수(3개), 컨테이너 런타임이 리눅스 기반 OrbStack VM(`OSType: linux`)이라는 점을 확인할 수 있음. macOS는 리눅스 커널이 없기 때문에, Docker는 항상 이런 식으로 경량 리눅스 VM을 하나 띄워 그 안에서 컨테이너를 돌린다는 걸 실제 출력으로 확인한 셈.
 - **`docker stats`가 알려주는 것**: 컨테이너별 CPU·메모리·네트워크·디스크 I/O를 실시간으로 보여줌. 위 예시에서 `stats-test` 컨테이너가 15.67GiB 중 17MB 남짓만 쓰고 있는 걸 보면, 컨테이너는 호스트 자원을 통째로 차지하는 게 아니라 필요한 만큼만 격리해서 쓴다는 걸 알 수 있음.
-- **`docker rm` vs `docker rmi`**: 대상이 다름. `docker rm <컨테이너>`는 이미지를 실행해서 만들어진 **컨테이너(인스턴스)**를 삭제하는 명령이고(실행 중이면 `docker stop` 후 삭제하거나 `-f`로 강제 삭제), `docker rmi <이미지>`는 빌드된 **이미지(템플릿)** 자체를 삭제하는 명령임. 컨테이너가 이미지를 실행한 결과물이라, 그 이미지를 쓰고 있는 컨테이너가 남아있으면 `docker rmi`가 `image is being used by container` 에러로 거부되므로 항상 컨테이너 삭제(`rm`)가 이미지 삭제(`rmi`)보다 먼저 와야 함.
+- **`docker rm` vs `docker rmi`**: 대상이 다름. `docker rm <컨테이너>`는 이미지를 실행해서 만들어진 **컨테이너(인스턴스)**를 삭제하는 명령이고(실행 중이면 `docker stop` 후 삭제하거나 `-f`로 강제 삭제), `docker rmi <이미지>`는 빌드된 **이미지(템플릿)** 자체를 삭제하는 명령임. 컨테이너가 이미지를 실행한 결과물이라, 그 이미지를 쓰고 있는 컨테이너가 남아있으면 `docker rmi`가 `image is being used by container` 에러로 거부되므로 항상 컨테이너 삭제(`rm`)가 이미지 삭제(`rmi`)보다 먼저 와야 함. 실제로 이 순서를 검증함:
+
+```bash
+$ docker images
+REPOSITORY    TAG       IMAGE ID       CREATED              SIZE
+my-node-app   1.0       35b8fb3adfc3   About a minute ago   127MB
+
+$ docker run -d --name rmi-test -p 3000:3000 my-node-app:1.0
+959eeaa796befc7cd611dee78d41c8a424da88b328c14de27b9c18c647e97d26
+
+$ docker rmi my-node-app:1.0
+Error response from daemon: conflict: unable to remove repository reference "my-node-app:1.0" (must force) - container 959eeaa796be is using its referenced image 35b8fb3adfc3
+
+$ docker rm -f rmi-test
+rmi-test
+
+$ docker rmi my-node-app:1.0
+Untagged: my-node-app:1.0
+Deleted: sha256:35b8fb3adfc37635f5b74637fceddb5c5e5d6ad5e5eccda31b1cf0a3828c09c8
+
+$ docker images
+REPOSITORY   TAG       IMAGE ID   CREATED   SIZE
+```
+
+→ 컨테이너(`rmi-test`)가 이미지를 쓰고 있는 상태에서는 `docker rmi`가 `conflict: unable to remove repository reference ... (must force)` 에러로 거부되고, `docker rm -f`로 컨테이너를 먼저 지운 뒤에야 `docker rmi`가 `Untagged`/`Deleted`로 성공하며 `docker images` 목록에서 완전히 사라지는 것을 실제로 확인함.
 
 ---
 
@@ -660,5 +686,3 @@ origin  https://github.com/SeouliteParker/my_first_git.git (push)
 `ssh-keygen -t ed25519`로 개인키(`id_ed25519`)와 공개키(`id_ed25519.pub`) 한 쌍을 생성함. 개인키는 권한이 `-rw-------`(600)로 소유자만 읽고 쓸 수 있도록 제한되어 있고, 공개키는 `-rw-r--r--`(644)로 다른 사용자도 읽을 수 있음 — 이 차이가 SSH 키 방식의 핵심으로, 공개키는 GitHub 서버에 등록해 공유하고 개인키는 로컬 컴퓨터 밖으로 절대 유출되지 않아야 하는 구조임.
 
 `git remote -v` 확인 결과 현재 origin은 아직 HTTPS 주소(`https://github.com/...`)로 남아있어, 이후 GitHub 계정 설정에 공개키(`id_ed25519.pub`)를 등록하고 `git remote set-url origin git@github.com:SeouliteParker/my_first_git.git`으로 전환하는 절차가 남아있음. HTTPS + PAT 방식은 [9번-3](#9-트러블슈팅)에서 겪은 것처럼 터미널에 토큰 값이 노출될 위험이 있는 반면, SSH 키 방식은 인증 정보가 키 파일 형태로 로컬에만 존재해 그런 노출 위험 자체가 구조적으로 줄어듦.
-
-s
