@@ -36,7 +36,24 @@
 
 - **미션 목표**: 터미널·Docker(OrbStack)·Git/GitHub를 직접 세팅하여, 팀원 누구나 동일하게 실행·배포·디버깅할 수 있는 재현 가능한 개발 워크스테이션을 구축한다.
 - **저장소 링크**: https://github.com/SeouliteParker/my_first_git (원래 이름 `Codyssey`에서 변경됨)
-- **구성**: `README.md`, `Dockerfile`, `app/`(웹서버 소스: `app.js`, `package.json`), `docs/images/`(스크린샷)
+- **구성**:
+
+```
+my_first_git/
+├── README.md
+├── Dockerfile
+├── app/
+│   ├── app.js
+│   └── package.json
+└── docs/
+    └── images/
+        ├── dockerfile-vscode_2.png
+        ├── port-mapping-browser_3.png
+        ├── port-mapping-browser-2_2.png
+        ├── vscode-open-folder-structure_4.png
+        ├── vscode-explorer-readme_2.png
+        └── vscode-github-account_3.png
+```
 
 | OS | 아키텍처 | 쉘 | 컨테이너 런타임 | Docker | Git |
 | --- | --- | --- | --- | --- | --- |
@@ -304,14 +321,14 @@ exit
 FROM node:18-alpine
 WORKDIR /app
 RUN mkdir -p /app/data
-COPY package.json .
+COPY app/package.json .
 RUN npm install
-COPY app.js .
+COPY app/app.js .
 EXPOSE 3000
 CMD ["node", "app.js"]
 ```
 
-![Dockerfile (VS Code)](docs/images/dockerfile-vscode.png)
+![Dockerfile (VS Code)](docs/images/dockerfile-vscode_2.png)
 
 **웹 서버 소스코드**
 
@@ -336,7 +353,7 @@ server.listen(3000, () => {
 | --- | --- |
 | `WORKDIR /app` | 컨테이너 내 작업 디렉토리를 고정해 파일 경로를 명확히 함 |
 | `RUN mkdir -p /app/data` | 이후 바인드 마운트/볼륨으로 연결할 데이터 디렉토리를 빌드 시점에 미리 생성 |
-| `COPY package.json .` / `COPY app.js .` | 호스트의 앱 소스를 이미지에 반영 |
+| `COPY app/package.json .` / `COPY app/app.js .` | 호스트의 앱 소스(`app/` 폴더)를 이미지에 반영 |
 | `RUN npm install` | 빌드 시점에 의존성을 설치해 실행 시 추가 설치가 필요 없게 함 |
 | `EXPOSE 3000` | 컨테이너가 사용하는 포트를 문서화 |
 | `CMD ["node", "app.js"]` | 컨테이너 시작 시 실행할 기본 명령 지정 (`package.json`에 `start` 스크립트가 없어 `npm start` 대신 직접 지정 — [9. 트러블슈팅 #5](#9-트러블슈팅)) |
@@ -347,9 +364,9 @@ $ docker build -t my-node-app:1.0 .
  => [1/6] FROM docker.io/library/node:18-alpine
  => [2/6] WORKDIR /app
  => [3/6] RUN mkdir -p /app/data
- => [4/6] COPY package.json .
+ => [4/6] COPY app/package.json .
  => [5/6] RUN npm install
- => [6/6] COPY app.js .
+ => [6/6] COPY app/app.js .
  => exporting to image
  => => naming to docker.io/library/my-node-app:1.0
 
@@ -371,11 +388,11 @@ $ docker run -d --name web-app -p 8080:3000 my-node-app:1.0   # 다른 호스트
 
 1차 접속 (주소창 `localhost:3000` + 응답):
 
-![포트 매핑 접속 증거 1](docs/images/port-mapping-browser.png)
+![포트 매핑 접속 증거 1](docs/images/port-mapping-browser_3.png)
 
 2차 접속 — 다른 시점, 다른 브라우저 탭 구성에서 재확인:
 
-![포트 매핑 접속 증거 2](docs/images/port-mapping-browser-2.png)
+![포트 매핑 접속 증거 2](docs/images/port-mapping-browser-2_2.png)
 
 - **커스텀 이미지란**: `node:18-alpine`이라는 기존 공식 이미지를 베이스로, `RUN`으로 필요한 디렉토리를 만들고 `COPY`로 내 애플리케이션 코드를 얹어 나만의 실행 이미지(`my-node-app:1.0`)를 만든 것. 즉 "이미지를 처음부터 새로 만드는 것"이 아니라 "이미 검증된 공식 이미지 위에 내 코드와 설정만 얹는" 방식이라, 베이스 이미지가 제공하는 Node.js 런타임·리눅스 환경은 그대로 재사용하면서 필요한 부분만 커스터마이징하는 게 핵심.
 - **포트 매핑이 필요한 이유**: 컨테이너는 기본적으로 호스트와 분리된 자체 네트워크 네임스페이스를 가져서, 컨테이너 안에서 3000번 포트로 서버가 떠 있어도 호스트(내 macOS)에서는 그 포트가 보이지 않음. `-p <host>:<container>`로 호스트 포트와 컨테이너 포트를 연결해야 비로소 `curl http://localhost:3000`처럼 호스트에서 접속할 수 있음 — 실제로 위 로그·스크린샷 2장 모두 이 매핑이 있었기 때문에 접속에 성공한 것이고, 포트 충돌 트러블슈팅에서도 매핑된 호스트 포트가 겹치면 아예 컨테이너 실행 자체가 거부된다는 걸 확인함.
@@ -490,9 +507,9 @@ $ git log --oneline
 
 터미널에서 `code ~/my_first_git`로 VS Code를 열었고, 탐색기(Explorer)에 `my_docker_app`(Docker 실습 폴더)과 `my_first_git`(Git 실습 폴더), `README.md`가 함께 보이는 것으로 두 실습을 같은 작업 공간에서 관리했음을 확인.
 
-![VS Code 폴더 구조](docs/images/vscode-open-folder-structure.png)
+![VS Code 폴더 구조](docs/images/vscode-open-folder-structure_4.png)
 
-![VS Code에서 README.md 열림](docs/images/vscode-explorer-readme.png)
+![VS Code에서 README.md 열림](docs/images/vscode-explorer-readme_2.png)
 
 **다른 PC에서 재현하는 방법**: 위 방식(`code ~/my_first_git`)은 로컬에 저장소가 이미 있는 컴퓨터에서만 동작함. 로컬 폴더가 없는 다른 PC(공용PC 등)에서는 GitHub에서 직접 clone하여 여는 방식으로 동일하게 재현 가능함.
 
@@ -506,7 +523,7 @@ $ code .
 
 **VSCode ↔ GitHub 연동**: VS Code 좌측 하단 계정 메뉴에 GitHub 계정이 연결되어 있고 Settings Sync가 켜져 있음을 확인.
 
-![VSCode GitHub 연동](docs/images/vscode-github-account.png)
+![VSCode GitHub 연동](docs/images/vscode-github-account_3.png)
 
 **Git vs GitHub**
 
