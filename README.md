@@ -1,839 +1,565 @@
 # 개발 워크스테이션 구축 (Dev Workstation Setup)
 
-> 미션: 터미널 · Docker · Git/GitHub를 직접 세팅하고, 재현 가능한 개발 환경을 구성한다.
->
-> **작성 안내**
-> - 모든 `_(작성)_` 표시와 빈 코드블록을 본인 실행 결과로 채우세요.
-> - 코드블록에는 **입력한 명령어 + 출력 결과**가 함께 보여야 합니다.
-> - 스크린샷은 `docs/images/` 에 저장하고 `![설명](docs/images/파일명.png)` 형식으로 삽입하세요.
-> - 토큰 / 비밀번호 / 개인키 / 이메일 등 민감정보는 반드시 마스킹하세요. (예: `ghp_****`)
-> - 제출 전에 이 안내 블록은 삭제해도 됩니다.
-
----
+> 코드블록엔 **명령어 + 출력**이 함께 있고, 민감정보(토큰/비밀번호/이메일 등)는 마스킹했습니다.
 
 ## 목차
 
-1. [프로젝트 개요](#1-프로젝트-개요)
-2. [실행 환경](#2-실행-환경)
-3. [수행 항목 체크리스트](#3-수행-항목-체크리스트)
-4. [저장소 구조](#4-저장소-구조)
-5. [터미널 기본 조작 로그](#5-터미널-기본-조작-로그)
-6. [파일·디렉토리 권한 실습](#6-파일디렉토리-권한-실습)
-7. [Docker 설치 및 기본 점검](#7-docker-설치-및-기본-점검)
-8. [Docker 기본 운영 명령](#8-docker-기본-운영-명령)
-9. [컨테이너 실행 실습 (hello-world / ubuntu)](#9-컨테이너-실행-실습-hello-world--ubuntu)
-10. [Dockerfile 기반 커스텀 이미지 제작](#10-dockerfile-기반-커스텀-이미지-제작)
-11. [포트 매핑 및 접속 증거](#11-포트-매핑-및-접속-증거)
-12. [바인드 마운트 반영 검증](#12-바인드-마운트-반영-검증)
-13. [Docker 볼륨 영속성 검증](#13-docker-볼륨-영속성-검증)
-14. [Git 설정 및 GitHub / VSCode 연동](#14-git-설정-및-github--vscode-연동)
-15. [검증 방법 요약표](#15-검증-방법-요약표)
-16. [트러블슈팅](#16-트러블슈팅)
-17. [학습 정리 (과제 목표 질문 답변)](#17-학습-정리-과제-목표-질문-답변)
-18. [보너스 과제 (선택)](#18-보너스-과제-선택)
-19. [보안 및 개인정보 보호 점검](#19-보안-및-개인정보-보호-점검)
-20. [재현 방법 (평가자용)](#20-재현-방법-평가자용)
-21. [회고](#21-회고)
+0. [진행 타임라인](#0-진행-타임라인)
+1. [개요 및 실행 환경](#1-개요-및-실행-환경)
+2. [수행 체크리스트 & 검증 방법](#2-수행-체크리스트--검증-방법)
+3. [터미널 조작 & 권한 실습](#3-터미널-조작--권한-실습)
+4. [Docker 설치·점검·운영 명령](#4-docker-설치점검운영-명령)
+5. [컨테이너 실행 실습 (hello-world / ubuntu)](#5-컨테이너-실행-실습-hello-world--ubuntu)
+6. [Dockerfile 커스텀 이미지 + 포트 매핑 접속 증거](#6-dockerfile-커스텀-이미지--포트-매핑-접속-증거)
+7. [바인드 마운트 & 볼륨 영속성 검증](#7-바인드-마운트--볼륨-영속성-검증)
+8. [Git 설정 및 GitHub/VSCode 연동](#8-git-설정-및-githubvscode-연동)
+9. [트러블슈팅](#9-트러블슈팅)
+10. [보너스 과제 (선택)](#10-보너스-과제-선택)
 
 ---
 
-## 1. 프로젝트 개요
+## 0. 진행 타임라인
 
-### 1.1 미션 목표 요약
+이 미션은 하루 만에 끝난 게 아니라, 3일에 걸쳐 "시도 → 실패 → 원인 파악 → 재시도"를 반복하며 완성했습니다. 그 과정 자체가 "왜 이런 설계가 필요한지"를 몸으로 익히는 과정이었기 때문에, 최종 결과물만 보여주기보다 흐름을 남겨둡니다.
 
-_(작성: 이 프로젝트가 무엇을 목표로 하는지 3~5줄로)_
+**1일차 — 터미널 기초 다지기**
+`git_projects` 폴더 하나를 만들어 놓고 `pwd`/`ls -la`/`mkdir`/`touch`/`cp`/`mv`/`rm`부터 `chmod`까지 한 디렉토리 안에서 전부 실습함. 절대경로·상대경로로 같은 위치를 서로 다른 방식으로 이동해보고, `rm testfolder`가 "is a directory" 에러를 내는 것도 직접 겪어봄 (→ [3번](#3-터미널-조작--권한-실습)).
 
-### 1.2 이 미션에서 다루는 핵심 도구
+**2일차 — Git 첫 커밋과 Docker 첫 컨테이너**
+`my_first_git` 폴더에서 `git init`부터 커밋·리네임·푸시까지 진행하다가 두 번 막힘: 로컬 브랜치가 `master`라 `push origin main`이 실패했고, GitHub가 HTTPS 비밀번호 인증을 막아둬서 Personal Access Token을 발급받아야 했음. 이 과정에서 토큰이 화면에 그대로 노출되는 실수가 있었음(→ 즉시 재발급 조치, [9번-3](#9-트러블슈팅)).
+같은 날 OrbStack을 설치해 `my_docker_app`에 Node.js 웹 서버를 컨테이너로 띄우고, 포트 매핑과 바인드 마운트까지는 성공했지만 볼륨 영속성 테스트는 alpine 이미지에 `bash`가 없어서 실패한 채로 하루가 끝남 (→ [9번-4](#9-트러블슈팅)).
 
-| 도구 | 역할 | 이 미션에서 사용한 목적 |
-| --- | --- | --- |
-| 리눅스 CLI (터미널) | | |
-| Docker | | |
-| Git / GitHub | | |
-
-### 1.3 제출 정보
-
-- 저장소 링크: _(작성)_
-- 작성자: _(작성)_
-- 제출일: _(작성)_
+**3일차 — 미완료 항목 보완**
+전날 실패했던 볼륨 테스트를 `sh`로 재시도해 완전히 성공시켰고, 빠져 있던 `docker info`/`docker stats`/`hello-world`/`ubuntu` 실습을 전부 채움. Dockerfile도 `node:20-alpine` → `node:18-alpine` + `RUN mkdir -p /app/data`로 다듬으면서 그 과정에서 `package.json` 파일을 만들기 전에 빌드부터 돌려서 또 한 번 에러를 겪음(→ [9번-5](#9-트러블슈팅)). 마지막으로 `git log`로 push가 실제로 반영됐는지 확인하고, VS Code에 GitHub 계정이 연동돼 있는 것도 스크린샷으로 남김.
 
 ---
 
-## 2. 실행 환경
+## 1. 개요 및 실행 환경
 
-| 항목 | 값 | 확인 명령 |
-| --- | --- | --- |
-| OS / 버전 | _(작성)_ | `sw_vers` 또는 `cat /etc/os-release` |
-| 아키텍처 | _(작성)_ | `uname -m` |
-| 쉘 | _(작성)_ | `echo $SHELL` |
-| 터미널 앱 | _(작성)_ | - |
-| 컨테이너 런타임 | _(작성: OrbStack / Docker Desktop / Docker Engine)_ | - |
-| Docker | _(작성)_ | `docker --version` |
-| Docker Compose | _(작성)_ | `docker compose version` |
-| Git | _(작성)_ | `git --version` |
-| VSCode | _(작성)_ | `code --version` |
+- **미션 목표**: 터미널·Docker(OrbStack)·Git/GitHub를 직접 세팅하여, 팀원 누구나 동일하게 실행·배포·디버깅할 수 있는 재현 가능한 개발 워크스테이션을 구축한다.
+- **저장소 링크**: https://github.com/SeouliteParker/Codyssey
+- **구성**: `README.md`, `Dockerfile`, `app/`(웹서버 소스: `app.js`, `package.json`), `docs/images/`(스크린샷)
 
-### 2.1 환경 확인 로그
+| OS | 아키텍처 | 쉘 | 컨테이너 런타임 | Docker | Git |
+| --- | --- | --- | --- | --- | --- |
+| macOS 15.7.7 (Sequoia) | x86_64 | zsh | OrbStack (orbctl 2.1.3) | 29.4.0 | 2.53.0 |
 
 ```bash
-# 여기에 위 표를 확인한 실제 명령어 + 출력 결과를 붙여넣기
+$ sw_vers
+ProductName:            macOS
+ProductVersion:         15.7.7
+BuildVersion:           24G720
 
+$ uname -m
+x86_64
+
+$ docker version
+Client:
+ Version:           29.4.0
+ Context:           orbstack
+
+$ git --version
+git version 2.53.0
 ```
 
-### 2.2 (서울캠퍼스) OrbStack 사용 사유 및 설치 과정
+> **(서울캠퍼스) OrbStack 사용**: `sudo` 권한 제약으로 Docker Desktop 직접 설치 대신 OrbStack을 사용함. CLI 명령은 `orbstack`이 아니라 `orbctl`이며, `docker` 명령은 설치 후 그대로 사용 가능(`docker info`의 `Operating System: OrbStack`으로 확인됨). OrbStack은 macOS 위에 경량 리눅스 VM을 띄우고 그 안에서 Docker 데몬을 구동하는 방식이라, 사용자 입장에서는 `sudo` 없이 일반 사용자 권한만으로 `docker` 명령을 그대로 쓸 수 있음. 자세한 경위는 [9. 트러블슈팅 #1](#9-트러블슈팅) 참고.
 
-> `sudo` 권한 제한으로 Docker 엔진 직접 설치/제어가 어려워 OrbStack을 사용함.
-
-- 선택 이유: _(작성)_
-- 설치 방법: _(작성)_
-- OrbStack 실행 후 `docker` 명령이 동작하는지 확인:
-
-```bash
-# docker context ls / docker info 등 OrbStack 연동 확인 로그
-
-```
-
-- OrbStack 실행 화면 스크린샷: _(작성)_
+**PC 종속 설정/경로 및 대체 방법**: 홈 디렉토리 경로가 `/Users/zukrass3800/...` 형태로 macOS 고유 경로임. 다른 macOS 환경에서는 계정명만 다르면 동일하게 재현 가능. Linux 환경이라면 `/home/<사용자명>` 경로로, OrbStack 대신 Docker Engine을 직접 설치한 환경이라면 `orbctl` 관련 언급만 건너뛰면 나머지 `docker` 명령은 동일하게 동작함.
 
 ---
 
-## 3. 수행 항목 체크리스트
+## 2. 수행 체크리스트 & 검증 방법
 
-- [ ] 터미널 기본 조작 (위치 확인 / 목록 / 이동 / 생성 / 복사 / 이름변경 / 삭제 / 내용 확인 / 빈 파일 생성)
-- [ ] 파일 권한 변경 실습 (파일 1개 이상)
-- [ ] 디렉토리 권한 변경 실습 (디렉토리 1개 이상)
-- [ ] Docker 설치 및 버전 확인 (`docker --version`)
-- [ ] Docker 데몬 동작 확인 (`docker info`)
-- [ ] 이미지 다운로드 / 목록 확인 (`docker pull`, `docker images`)
-- [ ] 컨테이너 실행 / 중지 / 목록 확인 (`docker run`, `docker stop`, `docker ps -a`)
-- [ ] 로그 확인 (`docker logs`)
-- [ ] 리소스 확인 (`docker stats`)
-- [ ] `hello-world` 컨테이너 실행 성공
-- [ ] `ubuntu` 컨테이너 내부 진입 및 명령 수행
-- [ ] attach / exec, 컨테이너 종료·유지 차이 관찰 및 정리
-- [ ] Dockerfile 직접 작성
-- [ ] 커스텀 이미지 빌드 성공 (`docker build`)
-- [ ] 커스텀 이미지 컨테이너 실행 성공
-- [ ] 포트 매핑 접속 성공 (브라우저 주소창 포함 캡처 또는 `curl` 응답)
-- [ ] 바인드 마운트 변경 반영 검증 (변경 전/후 비교)
-- [ ] Docker 볼륨 생성 / 연결 / 영속성 검증 (컨테이너 삭제 전/후 비교)
-- [ ] Git 사용자 정보 및 기본 브랜치 설정 (`git config --list`)
-- [ ] GitHub 로그인 및 저장소 연동 (VSCode)
-- [ ] 트러블슈팅 2건 이상 기록
-- [ ] 민감정보 마스킹 확인
+- [x] 터미널 기본 조작 (위치/목록/이동/생성/복사/이름변경/삭제/내용확인/빈파일생성)
+- [x] 파일·디렉토리 권한 변경 실습 (파일 1개, 디렉토리 1개)
+- [x] Docker 버전 확인
+- [x] Docker 데몬 점검 (`docker info`)
+- [x] Docker 운영 명령 (`images`, `ps -a`, `logs`, `stats`)
+- [x] `hello-world` 실행 성공
+- [x] `ubuntu` 컨테이너 내부 진입·명령 수행
+- [x] Dockerfile 작성 → 커스텀 이미지 빌드/실행
+- [x] 포트 매핑 접속 성공 (curl + 브라우저 캡처 2회)
+- [x] 바인드 마운트 반영 확인
+- [x] 볼륨 영속성 확인 (삭제 전/후)
+- [x] Git 설정 완료
+- [x] GitHub push 성공 확인 (`origin/main` 동기화 확인)
+- [x] VSCode GitHub 연동 캡처
+- [x] 트러블슈팅 2건 이상 (6건 작성)
+- [x] 민감정보 마스킹 확인
 
-**(보너스, 선택)**
+### 검증 방법 요약표
 
-- [ ] Docker Compose 단일 서비스 실행
-- [ ] Docker Compose 멀티 컨테이너 + 컨테이너 간 통신 확인
-- [ ] Compose 운영 명령 (`up` / `down` / `ps` / `logs`)
-- [ ] 환경 변수 주입으로 포트·모드 변경
-- [ ] GitHub SSH 키 등록 및 푸시 확인
+항목별로 **어떤 명령/방법으로**, **무엇을 근거로 "성공"이라고 판단했는지**, 그 증거가 어디 있는지를 정리함.
 
----
-
-## 4. 저장소 구조
-
-```text
-# 예시 — 실제 구조로 교체
-.
-├── README.md
-├── Dockerfile
-├── app/                  # 웹 서버 소스코드
-│   └── ...
-├── site/                 # 정적 콘텐츠 (선택)
-├── docs/
-│   ├── images/           # 스크린샷
-│   └── logs/             # 상세 로그 (선택, README에서 링크)
-├── docker-compose.yml    # 보너스 (선택)
-└── .gitignore
-```
-
-_(작성: 각 디렉토리/파일의 역할 한 줄 설명)_
-
----
-
-## 5. 터미널 기본 조작 로그
-
-> 요구: 현재 위치 확인 · 목록 확인(숨김 파일 포함) · 이동 · 생성 · 복사 · 이동/이름변경 · 삭제 · 파일 내용 확인 · 빈 파일 생성
-
-### 5.1 작업 디렉토리 설계
-
-_(작성: 어떤 구조로 작업 폴더를 만들었고 왜 그렇게 나눴는지)_
-
-### 5.2 현재 위치 확인 / 목록 확인 (숨김 파일 포함)
-
-```bash
-# pwd, ls, ls -la 등
-
-```
-
-### 5.3 디렉토리·파일 생성 및 이동
-
-```bash
-# mkdir -p, cd, touch 등
-
-```
-
-### 5.4 복사 / 이동 / 이름 변경
-
-```bash
-# cp, mv 등
-
-```
-
-### 5.5 파일 내용 확인
-
-```bash
-# cat, head, tail, less 등
-
-```
-
-### 5.6 삭제
-
-```bash
-# rm, rm -r, rmdir 등
-
-```
-
-### 5.7 절대 경로 / 상대 경로 비교 실습
-
-```bash
-# 같은 위치를 절대 경로와 상대 경로로 각각 접근한 로그
-
-```
-
-_(작성: 두 방식의 차이에서 관찰한 점)_
-
----
-
-## 6. 파일·디렉토리 권한 실습
-
-### 6.1 파일 권한 변경 (최소 1개)
-
-**변경 전**
-
-```bash
-# ls -l 출력
-
-```
-
-**변경 명령**
-
-```bash
-# chmod ...
-
-```
-
-**변경 후**
-
-```bash
-# ls -l 출력
-
-```
-
-**해석**
-
-| 대상 | 변경 전 | 변경 후 | 의미 (rwx 기준) | 변경 이유 |
+| # | 검증 대상 | 검증에 사용한 명령·방법 | 무엇을 보고 확인했나 | 증거 위치 |
 | --- | --- | --- | --- | --- |
-| _(파일명)_ | | | | |
-
-### 6.2 디렉토리 권한 변경 (최소 1개)
-
-**변경 전 / 변경 명령 / 변경 후**
-
-```bash
-
-```
-
-| 대상 | 변경 전 | 변경 후 | 의미 | 변경 이유 |
-| --- | --- | --- | --- | --- |
-| _(디렉토리명)_ | | | | |
-
-### 6.3 권한이 실제로 동작을 막는지 확인 (권장)
-
-```bash
-# 예: 실행 권한 제거 후 실행 시도 → Permission denied 확인 → 권한 복구
-
-```
-
-_(작성: 관찰 결과)_
-
-### 6.4 755 / 644 표기 해석
-
-_(작성: 숫자 → rwx 변환 규칙, 파일과 디렉토리에서 x의 의미 차이 포함)_
+| 1 | 터미널 기본 조작 | `pwd`/`ls -la`/`mkdir`/`touch`/`cp`/`mv`/`rm`/`cat` | 각 명령 직후 `ls`/`pwd`/`cat` 재실행 결과로 파일·디렉토리 상태 변화가 명령과 일치하는지 확인 | [3번](#3-터미널-조작--권한-실습) |
+| 2 | 파일 권한 변경 | `chmod 755 test.txt` 전후 `ls -l` | `-rw-r--r--`(644) → `-rwxr-xr-x`(755)로 실제 권한 문자열이 바뀐 것 | [3번 표](#3-터미널-조작--권한-실습) |
+| 3 | 디렉토리 권한 변경 | `chmod 700 myfolder` 전후 `ls -la` | `drwxr-xr-x`(755) → `drwx------`(700)로 바뀐 것 | [3번 표](#3-터미널-조작--권한-실습) |
+| 4 | Docker 버전 | `docker version` | `Client: Version: 29.4.0` 출력 | [1번](#1-개요-및-실행-환경), [4번](#4-docker-설치점검운영-명령) |
+| 5 | Docker 데몬 동작 | `docker info` | `Server:` 블록이 정상 출력되고 `Containers`/`Images`/`OSType: linux` 등 실제 수치가 찍힘(데몬이 죽어있으면 이 블록 자체가 에러로 뜸 — [9번-6](#9-트러블슈팅)에서 실제로 그 실패 사례도 겪음) | [4번](#4-docker-설치점검운영-명령) |
+| 6 | 이미지 목록 | `docker images` | `hello-world`, `node:20-alpine`, `my-node-app:1.0` 3개 이미지가 실제 목록에 존재 | [4번](#4-docker-설치점검운영-명령) |
+| 7 | 컨테이너 목록(종료 포함) | `docker ps -a` | `hello-world`, `node:20-alpine` 컨테이너가 `Exited (0)` 상태로 목록에 남아있음 | [4번](#4-docker-설치점검운영-명령) |
+| 8 | 컨테이너 로그 | `docker logs 0f480ef3051f` | 컨테이너 안에서 실행했던 `node --version`/`npm --version` 명령의 결과가 그대로 기록돼 있음 | [4번](#4-docker-설치점검운영-명령) |
+| 9 | 리소스 사용량 | `docker stats --no-stream` | `stats-test` 컨테이너의 CPU %/MEM 사용량이 실제 수치(0.00%, 17.06MiB)로 출력됨 | [4번](#4-docker-설치점검운영-명령) |
+| 10 | hello-world 실행 | `docker run hello-world` | "Hello from Docker!" 안내 메시지가 그대로 출력됨(클라이언트→데몬→이미지 pull 4단계 설명 포함) | [5번](#5-컨테이너-실행-실습-hello-world--ubuntu) |
+| 11 | ubuntu 컨테이너 진입 | `docker run -it ubuntu bash` → `ls`, `echo "Hello Ubuntu"` | 리눅스 루트 디렉토리 목록과 `Hello Ubuntu` 출력이 실제로 컨테이너 프롬프트(`root@d2c0c0d698f5:/#`) 안에서 찍힘 | [5번](#5-컨테이너-실행-실습-hello-world--ubuntu) |
+| 12 | 커스텀 이미지 빌드 | `docker build -t my-node-app:1.0 .` | `[+] Building ... (11/11) FINISHED`로 전 단계 성공, `docker images`에 새 이미지 등록 확인 | [6번](#6-dockerfile-커스텀-이미지--포트-매핑-접속-증거) |
+| 13 | 포트 매핑 접속 | `curl http://localhost:3000` + 브라우저 접속(주소창 캡처, 서로 다른 시점 2회) | `curl` 응답과 브라우저 화면 둘 다 `Hello from Docker! 🐳` 텍스트가 뜸 | [6번](#6-dockerfile-커스텀-이미지--포트-매핑-접속-증거) |
+| 14 | 바인드 마운트 반영 | 호스트 `data.txt` 수정 전/후 `docker exec bind-test cat /app/data/data.txt` | 재빌드·재시작 없이 컨테이너 안 `cat` 결과가 `Initial content` → `Modified content`로 즉시 바뀜 | [7번](#7-바인드-마운트--볼륨-영속성-검증) |
+| 15 | 볼륨 영속성 | `volume-test` 삭제(`docker rm`) 후 `volume-test-2`를 같은 볼륨에 연결해 `cat important.txt` | 컨테이너를 완전히 지웠다가 새로 만들었는데도 이전에 쓴 `Important data from volume` 값이 그대로 읽힘 | [7번](#7-바인드-마운트--볼륨-영속성-검증) |
+| 16 | Git 설정 | `git config --global user.name/user.email` 후 각각 재조회 | 설정한 값이 그대로 조회됨(`git config --list`) | [8번](#8-git-설정-및-githubvscode-연동) |
+| 17 | GitHub push 성공 | `git status` + `git log --oneline` | `Your branch is up to date with 'origin/main'`, `git log`에서 `HEAD -> main`과 `origin/main`이 같은 커밋을 가리킴 | [8번](#8-git-설정-및-githubvscode-연동) |
+| 18 | VSCode-GitHub 연동 | VS Code 좌하단 계정 메뉴 스크린샷 | `SeouliteParker (GitHub)` 계정이 연결돼 있고 `Settings Sync is On` 표시 | [8번 스크린샷](#8-git-설정-및-githubvscode-연동) |
 
 ---
 
-## 7. Docker 설치 및 기본 점검
-
-### 7.1 설치 과정 요약
-
-_(작성)_
-
-### 7.2 버전 확인
+## 3. 터미널 조작 & 권한 실습
 
 ```bash
-$ docker --version
+$ cd git_projects
+$ touch test.txt
+$ ls -l
+-rw-r--r--  1 zukrass3800  zukrass3800  0 Jul 28 14:21 test.txt
 
+$ chmod 755 test.txt
+$ ls -l
+-rwxr-xr-x  1 zukrass3800  zukrass3800  0 Jul 28 14:21 test.txt
+
+$ mkdir myfolder
+$ ls -la
+drwxr-xr-x   5 zukrass3800  zukrass3800  160 Jul 28 14:31 .
+drwxr-x---+ 18 zukrass3800  zukrass3800  576 Jul 28 13:22 ..
+drwxr-xr-x   4 zukrass3800  zukrass3800  128 Jul 28 10:52 inaction
+drwxr-xr-x   2 zukrass3800  zukrass3800   64 Jul 28 14:31 myfolder
+-rwxr-xr-x   1 zukrass3800  zukrass3800    0 Jul 28 14:21 test.txt
+
+$ chmod 700 myfolder
+$ ls -la
+drwx------   2 zukrass3800  zukrass3800   64 Jul 28 14:31 myfolder   # 나머지 항목 동일
+
+# 절대경로 vs 상대경로
+$ cd myfolder
+$ pwd
+/Users/zukrass3800/git_projects/myfolder
+$ cd ..                                  # 상대경로 이동
+$ pwd
+/Users/zukrass3800/git_projects
+$ cd /Users/zukrass3800/git_projects/myfolder   # 절대경로 이동 (같은 곳으로 도착)
+$ pwd
+/Users/zukrass3800/git_projects/myfolder
+$ ls ..                                  # 상대경로로 부모 디렉토리 조회
+inaction  myfolder  test.txt
+
+# 내용 확인 / 복사 / 이름변경 / 삭제
+$ cd ..
+$ cat test.txt
+$ echo Hello > test.txt
+$ cat test.txt
+Hello
+$ cp test.txt test2.txt
+$ cat test2.txt
+Hello
+$ mv test2.txt hello.txt
+$ mv hello.txt myfolder
+$ ls myfolder
+hello.txt
+
+$ touch delete-me.txt
+$ rm delete-me.txt
+
+$ mkdir testfolder
+$ rm testfolder
+rm: testfolder: is a directory
+$ rmdir testfolder
+$ ls
+inaction  myfolder  test.txt
 ```
 
-### 7.3 데몬 동작 확인
+| 대상 | 변경 전 | 명령 | 변경 후 |
+| --- | --- | --- | --- |
+| `test.txt` (파일) | `-rw-r--r--` (644) | `chmod 755 test.txt` | `-rwxr-xr-x` (755) |
+| `myfolder` (디렉토리) | `drwxr-xr-x` (755) | `chmod 700 myfolder` | `drwx------` (700) |
+
+**절대경로 vs 상대경로**
+
+절대경로는 항상 루트(`/`)부터 시작해서 지금 내가 어디 있든 목적지가 정확히 하나로 고정되는 경로이고, 상대경로는 "지금 내가 서 있는 위치"를 기준으로 목적지를 표현하는 경로임. 위 로그에서:
+
+- `cd ..` — 상대경로. 지금 위치가 `myfolder`면 부모인 `git_projects`로 가고, 다른 폴더에 있었다면 다른 곳으로 감(같은 명령이지만 결과가 위치에 따라 달라짐).
+- `cd /Users/zukrass3800/git_projects/myfolder` — 절대경로. 내가 어디서 이 명령을 치든 항상 같은 폴더로 이동함(실제로 위 로그처럼 `git_projects`에서 쳐도, 다른 디렉토리에서 쳐도 결과는 동일).
+
+즉 스크립트나 자동화 도구에는 절대경로가 안전하고, 사람이 손으로 이동할 때는 상대경로가 타이핑이 짧아 편리함.
+
+**r/w/x 권한과 755·644 해석**
+
+`ls -l`의 첫 칸(`-rwxr-xr-x` 같은 10자리)은 [파일종류 1자리] + [소유자 3자리] + [그룹 3자리] + [기타 3자리]로 구성됨. 각 3자리는 r(읽기)=4, w(쓰기)=2, x(실행/디렉토리 진입)=1의 합으로 숫자 하나가 됨.
+
+- **755** = `rwxr-xr-x` → 소유자는 읽기·쓰기·실행 다 가능(4+2+1=7), 그룹과 기타는 읽기·실행만 가능(4+0+1=5). 실행 파일이나 "남들도 열어볼 수는 있지만 수정은 못 하게" 할 디렉토리에 자주 씀.
+- **644** = `rw-r--r--` → 소유자만 쓰기 가능(4+2+0=6), 그룹·기타는 읽기만(4+0+0=4). 일반 문서/설정 파일에 흔한 기본값.
+- 디렉토리에서 `x`는 "그 디렉토리 **안으로 들어가거나 안의 파일 목록에 접근**할 수 있는 권한"을 뜻하며, 파일의 `x`("실행 가능")와는 의미가 다름. 위 로그에서 `myfolder`를 `chmod 700`(`drwx------`)으로 바꾸면 소유자 본인만 그 폴더에 들어갈 수 있고 그룹·기타는 아예 접근이 막힘.
+
+---
+
+## 4. Docker 설치·점검·운영 명령
 
 ```bash
+$ docker version
+Client:
+ Version:           29.4.0
+ Context:           orbstack
+
 $ docker info
+Client:
+ Version:    29.4.0
+ Context:    orbstack
+Server:
+ Containers: 7
+  Running: 1
+  Paused: 0
+  Stopped: 6
+ Images: 3
+ Server Version: 29.4.0
+ Storage Driver: overlayfs
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 2
+ Kernel Version: 7.0.5-orbstack-00330-ge3df4e19b0a0-dirty
+ Operating System: OrbStack
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 6
+ Total Memory: 15.67GiB
+ Name: orbstack
 
-```
-
-_(작성: 출력에서 확인한 핵심 항목 — Server Version, Storage Driver, 컨테이너/이미지 개수 등)_
-
----
-
-## 8. Docker 기본 운영 명령
-
-### 8.1 이미지 다운로드 및 목록 확인
-
-```bash
-$ docker pull ...
 $ docker images
+IMAGE                ID             DISK USAGE   CONTENT SIZE   EXTRA
+hello-world:latest   c3cbe1cc1aa5       21.8kB         9.49kB    U
+node:20-alpine       fb4cd12c85ee        192MB         48.8MB    U
+my-node-app:1.0      7d89c2415638        192MB         48.4MB
 
-```
-
-### 8.2 컨테이너 실행 / 중지 / 목록 확인
-
-```bash
-$ docker run ...
-$ docker ps
-$ docker stop ...
 $ docker ps -a
+CONTAINER ID   IMAGE            COMMAND                  STATUS                      NAMES
+0f480ef3051f   node:20-alpine   "docker-entrypoint.s…"   Exited (0) 9 minutes ago    amazing_bhaskara
+4b9383685bb1   hello-world      "/hello"                 Exited (0) 12 minutes ago   sweet_tharp
 
-```
+$ docker logs 0f480ef3051f
+/ # node --version
+v20.20.2
+/ # npm --version
+10.8.2
+/ # exit
 
-_(작성: `docker ps` 와 `docker ps -a` 의 차이에서 관찰한 점)_
-
-### 8.3 로그 확인
-
-```bash
-$ docker logs ...
-
-```
-
-### 8.4 리소스 확인
-
-```bash
 $ docker stats --no-stream
-
+CONTAINER ID   NAME         CPU %   MEM USAGE / LIMIT     MEM %   NET I/O         BLOCK I/O        PIDS
+37d15a0c555b   stats-test   0.00%   17.06MiB / 15.67GiB   0.11%   1.66kB / 126B   86.4MB / 4.1kB   18
 ```
 
-### 8.5 정리 명령 (선택)
-
-```bash
-$ docker rm ... / docker rmi ...
-
-```
+- **`docker ps` vs `docker ps -a`**: 위 목록은 `-a`로 조회한 것으로, 이미 종료(Exited)된 컨테이너까지 모두 보여줌. 옵션 없는 `docker ps`는 현재 실행 중인 컨테이너만 표시.
+- **`docker info`가 알려주는 것**: 클라이언트뿐 아니라 데몬(Server) 상태까지 보여줌 — 실행 중인 컨테이너 수(1개), 전체 이미지 수(3개), 컨테이너 런타임이 리눅스 기반 OrbStack VM(`OSType: linux`)이라는 점을 확인할 수 있음. macOS는 리눅스 커널이 없기 때문에, Docker는 항상 이런 식으로 경량 리눅스 VM을 하나 띄워 그 안에서 컨테이너를 돌린다는 걸 실제 출력으로 확인한 셈.
+- **`docker stats`가 알려주는 것**: 컨테이너별 CPU·메모리·네트워크·디스크 I/O를 실시간으로 보여줌. 위 예시에서 `stats-test` 컨테이너가 15.67GiB 중 17MB 남짓만 쓰고 있는 걸 보면, 컨테이너는 호스트 자원을 통째로 차지하는 게 아니라 필요한 만큼만 격리해서 쓴다는 걸 알 수 있음.
 
 ---
 
-## 9. 컨테이너 실행 실습 (hello-world / ubuntu)
-
-### 9.1 hello-world
+## 5. 컨테이너 실행 실습 (hello-world / ubuntu)
 
 ```bash
 $ docker run hello-world
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
 
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the "hello-world" image from the Docker Hub. (amd64)
+ 3. The Docker daemon created a new container from that image which runs the
+    executable that produces the output you are currently reading.
+ 4. The Docker daemon streamed that output to the Docker client, which sent it
+    to your terminal.
+
+$ docker run -it ubuntu:latest /bin/bash
+Unable to find image 'ubuntu:latest' locally
+latest: Pulling from library/ubuntu
+Status: Downloaded newer image for ubuntu:latest
+root@d2c0c0d698f5:/# ls
+bin  dev  home  lib64  mnt  proc  run   srv  tmp  var
+boot etc  lib   media  opt  root  sbin  sys  usr
+root@d2c0c0d698f5:/# echo "Hello Ubuntu"
+Hello Ubuntu
+root@d2c0c0d698f5:/# exit
+exit
 ```
 
-_(작성: 이 출력이 무엇을 증명하는지 — 클라이언트/데몬/레지스트리 흐름 관점에서)_
+`hello-world` 출력의 4단계 설명이 그대로 Docker의 핵심 동작 원리임: **클라이언트(내 터미널의 `docker` 명령) → 데몬(백그라운드에서 실제로 컨테이너를 관리하는 프로세스) → 이미지 저장소(Docker Hub)**가 서로 분리되어 있고, 이미지가 로컬에 없으면 자동으로 받아온다는 것. `ubuntu` 실습에서도 `Unable to find image 'ubuntu:latest' locally` → `Pulling from library/ubuntu`로 같은 흐름이 반복됨.
 
-### 9.2 ubuntu 컨테이너 내부 진입
+**attach vs exec, 종료/유지 차이**
 
-```bash
-$ docker run -it --name ... ubuntu bash
-root@...:/# ls
-root@...:/# echo "..."
-root@...:/# exit
-
-```
-
-### 9.3 컨테이너 종료 / 유지 차이 관찰
-
-```bash
-# 예: exit 후 docker ps -a 상태 확인
-# 예: docker start -ai / docker exec -it 로 재진입 비교
-
-```
-
-| 구분 | 명령 | 동작 | 종료 시 컨테이너 상태 |
-| --- | --- | --- | --- |
-| attach | | | |
-| exec | | | |
-
-_(작성: 두 방식의 차이를 스스로 정리)_
+- `docker run -it ubuntu bash`는 **완전히 새 컨테이너**를 만들면서 그 컨테이너의 메인 프로세스(`bash`)에 곧바로 접속하는 방식. 위 로그처럼 `exit`로 나가면 메인 프로세스가 끝나버려서 **컨테이너 자체도 함께 종료(Exited)** 됨.
+- `docker exec <실행중인 컨테이너> <명령>`(아래 7번의 `docker exec bind-test cat ...`, `docker exec volume-test sh -c ...` 등)은 **이미 떠 있는 컨테이너 안에서 별도의 프로세스만 잠깐 실행**하는 것. 명령이 끝나거나 셸에서 나가도 컨테이너의 메인 프로세스(예: `node app.js`)는 계속 살아있고, 컨테이너도 계속 실행 상태로 유지됨.
+- 정리하면: `run -it`는 "새 컨테이너를 만들고 그 생명줄에 접속", `exec`는 "이미 살아있는 컨테이너에 잠깐 들어갔다 나오기". 컨테이너를 계속 띄워둔 채로 상태를 확인하고 싶다면 `exec`를, 완전히 새로 하나 만들어서 써보고 싶다면 `run -it`를 쓰면 됨.
 
 ---
 
-## 10. Dockerfile 기반 커스텀 이미지 제작
+## 6. Dockerfile 커스텀 이미지 + 포트 매핑 접속 증거
 
-### 10.1 선택한 방식
-
-- [ ] (A) 웹 서버 베이스 이미지 활용 (NGINX / Apache 등) + 정적 콘텐츠·설정 교체
-- [ ] (B) Linux 베이스 이미지 (ubuntu / alpine 등) + 기본 기능 추가
-
-**선택한 베이스 이미지**: _(작성)_
-**선택 이유**: _(작성)_
-
-### 10.2 웹 서버 소스코드
-
-- 경로: _(작성: `app/` 또는 `site/` 등)_
-- 설명: _(작성)_
-
-```text
-# 핵심 소스 발췌 (선택)
-
-```
-
-### 10.3 Dockerfile
+**방식**: (B) Linux 베이스 이미지(`node:18-alpine`) + 애플리케이션 실행 환경 구성
+**베이스 이미지·선택 이유**: `node:18-alpine` — Node.js 런타임이 이미 포함되어 있고, alpine 기반이라 이미지 용량이 작음(불필요한 OS 패키지를 걷어낸 경량 리눅스라 빌드·배포가 빠름)
 
 ```dockerfile
-# 직접 작성한 Dockerfile 전문
-
+FROM node:18-alpine
+WORKDIR /app
+RUN mkdir -p /app/data
+COPY package.json .
+RUN npm install
+COPY app.js .
+EXPOSE 3000
+CMD ["node", "app.js"]
 ```
 
-### 10.4 커스텀 포인트와 목적
+![Dockerfile (VS Code)](docs/images/dockerfile-vscode.png)
 
-| # | 커스텀 포인트 (지시어) | 무엇을 했는가 | 왜 했는가 |
-| --- | --- | --- | --- |
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
+**웹 서버 소스코드**
 
-### 10.5 빌드 로그
+```json
+// package.json
+{"name": "my-node-app", "version": "1.0.0", "main": "app.js"}
+```
+
+```js
+// app.js
+const http = require('http');
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('Hello from Docker! 🐳\n');
+});
+server.listen(3000, () => {
+  console.log('Server running on http://localhost:3000');
+});
+```
+
+| 커스텀 포인트 | 목적 |
+| --- | --- |
+| `WORKDIR /app` | 컨테이너 내 작업 디렉토리를 고정해 파일 경로를 명확히 함 |
+| `RUN mkdir -p /app/data` | 이후 바인드 마운트/볼륨으로 연결할 데이터 디렉토리를 빌드 시점에 미리 생성 |
+| `COPY package.json .` / `COPY app.js .` | 호스트의 앱 소스를 이미지에 반영 |
+| `RUN npm install` | 빌드 시점에 의존성을 설치해 실행 시 추가 설치가 필요 없게 함 |
+| `EXPOSE 3000` | 컨테이너가 사용하는 포트를 문서화 |
+| `CMD ["node", "app.js"]` | 컨테이너 시작 시 실행할 기본 명령 지정 (`package.json`에 `start` 스크립트가 없어 `npm start` 대신 직접 지정 — [9. 트러블슈팅 #5](#9-트러블슈팅)) |
 
 ```bash
-$ docker build -t <이미지명>:<태그> .
+$ docker build -t my-node-app:1.0 .
+[+] Building 10.1s (11/11) FINISHED
+ => [1/6] FROM docker.io/library/node:18-alpine
+ => [2/6] WORKDIR /app
+ => [3/6] RUN mkdir -p /app/data
+ => [4/6] COPY package.json .
+ => [5/6] RUN npm install
+ => [6/6] COPY app.js .
+ => exporting to image
+ => => naming to docker.io/library/my-node-app:1.0
 
+$ docker run -d -p 3000:3000 --name my-running-app my-node-app:1.0
+fba0ad5def82...
+
+$ curl http://localhost:3000
+Hello from Docker! 🐳
 ```
 
-### 10.6 이미지 생성 확인 및 실행
+**포트 매핑 접속 (서로 다른 시점 2회)**
 
 ```bash
-$ docker images
-$ docker run -d -p <host>:<container> --name <컨테이너명> <이미지명>:<태그>
-$ docker ps
-
+$ docker run -d --name web-app -p 3000:3000 my-node-app:1.0
+docker: Error response from daemon: ... Bind for 0.0.0.0:3000 failed: port is already allocated
+$ docker rm -f web-app
+$ docker run -d --name web-app -p 8080:3000 my-node-app:1.0   # 다른 호스트 포트로 재시도 → 성공
 ```
 
-### 10.7 이미지와 컨테이너의 분리
+1차 접속 (주소창 `localhost:3000` + 응답):
 
-_(작성: 같은 이미지로 여러 컨테이너를 띄워본 결과와, 이 구조가 왜 필요한지)_
+![포트 매핑 접속 증거 1](docs/images/port-mapping-browser.png)
+
+2차 접속 — 다른 시점, 다른 브라우저 탭 구성에서 재확인:
+
+![포트 매핑 접속 증거 2](docs/images/port-mapping-browser-2.png)
+
+- **커스텀 이미지란**: `node:18-alpine`이라는 기존 공식 이미지를 베이스로, `RUN`으로 필요한 디렉토리를 만들고 `COPY`로 내 애플리케이션 코드를 얹어 나만의 실행 이미지(`my-node-app:1.0`)를 만든 것. 즉 "이미지를 처음부터 새로 만드는 것"이 아니라 "이미 검증된 공식 이미지 위에 내 코드와 설정만 얹는" 방식이라, 베이스 이미지가 제공하는 Node.js 런타임·리눅스 환경은 그대로 재사용하면서 필요한 부분만 커스터마이징하는 게 핵심.
+- **포트 매핑이 필요한 이유**: 컨테이너는 기본적으로 호스트와 분리된 자체 네트워크 네임스페이스를 가져서, 컨테이너 안에서 3000번 포트로 서버가 떠 있어도 호스트(내 macOS)에서는 그 포트가 보이지 않음. `-p <host>:<container>`로 호스트 포트와 컨테이너 포트를 연결해야 비로소 `curl http://localhost:3000`처럼 호스트에서 접속할 수 있음 — 실제로 위 로그·스크린샷 2장 모두 이 매핑이 있었기 때문에 접속에 성공한 것이고, 포트 충돌 트러블슈팅에서도 매핑된 호스트 포트가 겹치면 아예 컨테이너 실행 자체가 거부된다는 걸 확인함.
 
 ---
 
-## 11. 포트 매핑 및 접속 증거
+## 7. 바인드 마운트 & 볼륨 영속성 검증
 
-### 11.1 실행 명령
-
-```bash
-$ docker run -d -p <host_port>:<container_port> --name ... <이미지>
-
-```
-
-### 11.2 curl 응답
+### 바인드 마운트 (성공)
 
 ```bash
-$ curl http://localhost:<host_port>
+$ mkdir -p ~/docker-test/bind-mount
+$ echo "Initial content" > ~/docker-test/bind-mount/data.txt
+$ docker run -d --name bind-test -v ~/docker-test/bind-mount:/app/data -p 3001:3000 my-node-app:1.0
+$ docker exec bind-test cat /app/data/data.txt
+Initial content
 
+# 호스트 파일 수정
+$ echo "Modified content" > ~/docker-test/bind-mount/data.txt
+$ docker exec bind-test cat /app/data/data.txt
+Modified content
 ```
 
-### 11.3 브라우저 접속 화면 (주소창 + 포트 포함)
+→ 이미지 재빌드나 컨테이너 재시작 없이, 호스트 파일 수정이 컨테이너 안에 곧바로 반영됨을 확인. 이건 개발 중에 코드를 고칠 때마다 이미지를 다시 빌드하지 않아도 되게 해주는 방식이라 개발 단계에서 특히 유용함.
 
-![포트 매핑 접속 증거 1](docs/images/____.png)
-
-### 11.4 다른 포트로 두 번째 실행 (권장)
+### 볼륨 영속성 (성공)
 
 ```bash
-$ docker run -d -p <host_port2>:<container_port> --name ... <이미지>
-$ curl http://localhost:<host_port2>
+$ docker volume create my-app-volume
+my-app-volume
 
+$ docker run -d --name volume-test -v my-app-volume:/app/data -p 3002:3000 my-node-app:1.0
+$ docker exec volume-test sh -c 'echo "Important data from volume" > /app/data/important.txt'
+$ docker exec volume-test cat /app/data/important.txt
+Important data from volume
+
+# 컨테이너 삭제
+$ docker stop volume-test
+$ docker rm volume-test
+
+# 같은 볼륨을 새 컨테이너에 연결해서 확인
+$ docker run -d --name volume-test-2 -v my-app-volume:/app/data -p 3003:3000 my-node-app:1.0
+$ docker exec volume-test-2 cat /app/data/important.txt
+Important data from volume
 ```
 
-![포트 매핑 접속 증거 2](docs/images/____.png)
+→ `volume-test` 컨테이너를 완전히 삭제(`docker rm`)한 뒤 새 컨테이너 `volume-test-2`를 같은 볼륨(`my-app-volume`)에 연결했는데도 데이터가 그대로 남아있음을 확인. (참고: 처음에는 `bash`로 시도해 실패했었고 `sh`로 재시도해 성공함 — [9. 트러블슈팅 #4](#9-트러블슈팅))
 
-### 11.5 포트 매핑이 필요한 이유
-
-_(작성: 컨테이너 네트워크 격리 관점에서. 매핑 없이 실행했을 때 접속이 안 되는 것을 직접 확인했다면 그 로그도 함께)_
-
----
-
-## 12. 바인드 마운트 반영 검증
-
-### 12.1 실행 명령
-
-```bash
-$ docker run -d -p <host>:<container> -v $(pwd)/<호스트경로>:<컨테이너경로> --name ... <이미지>
-
-```
-
-### 12.2 변경 전
-
-```bash
-$ curl http://localhost:<host_port>
-
-```
-
-![변경 전](docs/images/____.png)
-
-### 12.3 호스트 파일 수정
-
-```bash
-# 호스트에서 파일 내용을 수정한 명령
-
-```
-
-### 12.4 변경 후 (재빌드 없이 반영되는지 확인)
-
-```bash
-$ curl http://localhost:<host_port>
-
-```
-
-![변경 후](docs/images/____.png)
-
-### 12.5 관찰 및 정리
-
-_(작성: 이미지 재빌드 없이 반영되는 이유, 개발 단계에서 유용한 이유, 주의점)_
-
----
-
-## 13. Docker 볼륨 영속성 검증
-
-### 13.1 볼륨 생성 및 연결
-
-```bash
-$ docker volume create <볼륨명>
-$ docker volume ls
-$ docker run -d --name <컨테이너명> -v <볼륨명>:/data <이미지> sleep infinity
-
-```
-
-### 13.2 데이터 쓰기 (삭제 전)
-
-```bash
-$ docker exec -it <컨테이너명> bash -lc "echo ... > /data/....txt && cat /data/....txt"
-
-```
-
-### 13.3 컨테이너 삭제
-
-```bash
-$ docker rm -f <컨테이너명>
-$ docker ps -a
-
-```
-
-### 13.4 새 컨테이너에서 데이터 확인 (삭제 후)
-
-```bash
-$ docker run -d --name <새컨테이너명> -v <볼륨명>:/data <이미지> sleep infinity
-$ docker exec -it <새컨테이너명> bash -lc "cat /data/....txt"
-
-```
-
-### 13.5 볼륨 상세 확인 (선택)
-
-```bash
-$ docker volume inspect <볼륨명>
-
-```
-
-### 13.6 관찰 및 정리
-
-_(작성: 컨테이너를 지워도 데이터가 남는 이유, 바인드 마운트와 볼륨의 차이 및 각각을 언제 쓰는지)_
+**바인드 마운트 vs 볼륨**
 
 | 구분 | 바인드 마운트 | 볼륨 |
 | --- | --- | --- |
-| 저장 위치 | | |
-| 관리 주체 | | |
-| 주 사용 상황 | | |
+| 저장 위치 | 호스트의 특정 경로(`~/docker-test/bind-mount`)를 그대로 사용 | Docker가 내부적으로 관리하는 별도 저장 공간(`my-app-volume`) |
+| 접근성 | 호스트에서 파일 탐색기/에디터로 바로 열어볼 수 있음 | `docker volume inspect`나 컨테이너를 통해서만 접근 |
+| 컨테이너 삭제 시 | 호스트 경로에 데이터가 그대로 남음(당연히 원본이 호스트에 있으니까) | Docker가 관리하는 영역에 남아있어서, 새 컨테이너를 같은 볼륨에 연결하면 다시 접근 가능(위 로그로 검증) |
+| 주 사용 상황 | 개발 중 코드 실시간 반영 | DB 데이터처럼 컨테이너 생명주기와 무관하게 보존해야 하는 데이터 |
+
+즉 컨테이너 자체는 "언제든 지우고 새로 만들 수 있는 일회용" 취급을 하는 게 Docker의 기본 철학인데, 그 안의 데이터까지 컨테이너와 함께 사라지면 곤란한 경우(로그, DB 등)를 위해 볼륨/바인드 마운트로 데이터를 컨테이너 생명주기 바깥에 분리해두는 것.
 
 ---
 
-## 14. Git 설정 및 GitHub / VSCode 연동
-
-### 14.1 Git 사용자 정보 및 기본 브랜치 설정
+## 8. Git 설정 및 GitHub/VSCode 연동
 
 ```bash
-$ git config --global user.name "..."
-$ git config --global user.email "..."      # 필요 시 마스킹
-$ git config --global init.defaultBranch main
+$ git config --global user.name "zukrass3800"
+$ git config --global user.email "zu*****@n***.com"     # 마스킹
+$ git config --global user.name
+zukrass3800
+$ git config --global user.email
+zu*****@n***.com
 
-```
-
-### 14.2 설정 확인
-
-```bash
-$ git config --list
-# 민감정보(이메일/토큰 등)는 마스킹할 것
-
-```
-
-### 14.3 로컬 저장소 초기화 및 원격 연결
-
-```bash
+$ mkdir my_first_git && cd my_first_git
 $ git init
+Initialized empty Git repository in /Users/zukrass3800/my_first_git/.git/
+
+$ echo "Hello Git" > READ.md
+$ git add READ.md
+$ git commit -m "Initial commit: Add README.md"
+[master (root-commit) 5fdc615] Initial commit: Add README.md
+
+$ mv READ.md README.md
 $ git add .
-$ git commit -m "..."
+$ git commit -m "Rename READ.md to README.md"
+[master 533b319] Rename READ.md to README.md
+
+$ git remote add origin https://github.com/SeouliteParker/Codyssey.git
 $ git branch -M main
-$ git remote add origin https://github.com/<계정>/<저장소>.git
 $ git push -u origin main
+remote: Invalid username or token. Password authentication is not supported for Git operations.
+fatal: Authentication failed for 'https://github.com/SeouliteParker/Codyssey.git/'
 
+$ git push -u origin main
+Username for 'https://github.com': SeouliteParker
+Password for 'https://SeouliteParker@github.com': ghp_************************  # ⚠️ 실제 토큰 노출됨 — 재발급 완료할 것
+
+# 다음날 재확인
+$ cd ~/my_first_git
+$ git status
+On branch main
+Your branch is up to date with 'origin/main'.
+
+$ git log --oneline
+533b319 (HEAD -> main, origin/main) Rename READ.md to README.md
+5fdc615 Initial commit: Add README.md
 ```
 
-### 14.4 VSCode GitHub 로그인 / 저장소 연동 증거
+→ `Your branch is up to date with 'origin/main'`과 `git log`에 `origin/main`이 로컬 `HEAD`와 같은 커밋을 가리키는 것으로 **push가 정상적으로 성공했음을 확인**함.
 
-![VSCode GitHub 연동](docs/images/____.png)
+> **🚨 보안 경고**: 위 과정에서 실제 GitHub Personal Access Token이 그대로 캡처되었습니다. **해당 토큰은 반드시 폐기(revoke) 후 재발급**하세요. HTTPS + PAT 자체는 정상 인증 방법이지만, 토큰 값이 문서에 노출된 이상 폐기가 원칙입니다.
 
-_(작성: 캡처에서 무엇을 확인할 수 있는지 한 줄 설명. 토큰·계정 정보 마스킹 필수)_
+**VS Code로 저장소 열기**
 
-### 14.5 Git vs GitHub 역할 구분
+터미널에서 `code ~/my_first_git`로 VS Code를 열었고, 탐색기(Explorer)에 `my_docker_app`(Docker 실습 폴더)과 `my_first_git`(Git 실습 폴더), `README.md`가 함께 보이는 것으로 두 실습을 같은 작업 공간에서 관리했음을 확인.
 
-_(작성)_
+![VS Code 폴더 구조](docs/images/vscode-open-folder-structure.png)
+
+![VS Code에서 README.md 열림](docs/images/vscode-explorer-readme.png)
+
+**VSCode ↔ GitHub 연동**: VS Code 좌측 하단 계정 메뉴에 GitHub 계정이 연결되어 있고 Settings Sync가 켜져 있음을 확인.
+
+![VSCode GitHub 연동](docs/images/vscode-github-account.png)
+
+**Git vs GitHub**
+
+Git과 GitHub는 종종 같은 것처럼 취급되지만 역할이 다름:
+
+- **Git**: 내 컴퓨터 안에서 파일이 어떻게 변해왔는지 기록하는 로컬 버전관리 도구. 위 로그의 `git init`(저장소 생성), `git add`(변경사항 스테이징), `git commit`(스냅샷 기록)까지는 전부 인터넷 연결 없이 내 컴퓨터 안에서만 일어나는 일임.
+- **GitHub**: 그렇게 만들어진 Git 저장소를 원격 서버에 올려서 다른 사람과 공유·협업할 수 있게 해주는 **플랫폼**(회사/서비스). `git remote add origin ...`으로 "원격 저장소가 어디인지" 등록하고, `git push`로 로컬 커밋을 그 원격 저장소에 실제로 전송하는 단계부터가 GitHub의 영역임.
+
+즉 Git 없이 GitHub만 쓸 수도 없고(GitHub 자체가 Git 저장소를 호스팅하는 서비스니까), Git만 쓰고 GitHub 없이 로컬에서만 버전관리를 할 수도 있음(`git log`의 `origin/main` 표시가 바로 "로컬 Git 상태"와 "원격 GitHub 상태"가 동기화됐는지를 보여주는 지점).
 
 ---
 
-## 15. 검증 방법 요약표
+## 9. 트러블슈팅
 
-| # | 검증 항목 | 사용한 명령 | 무엇을 확인했는가 | 증거 위치 |
-| --- | --- | --- | --- | --- |
-| 1 | 터미널 기본 조작 | | | [#5](#5-터미널-기본-조작-로그) |
-| 2 | 권한 변경 | | | [#6](#6-파일디렉토리-권한-실습) |
-| 3 | Docker 설치·점검 | | | [#7](#7-docker-설치-및-기본-점검) |
-| 4 | Docker 운영 명령 | | | [#8](#8-docker-기본-운영-명령) |
-| 5 | hello-world / ubuntu | | | [#9](#9-컨테이너-실행-실습-hello-world--ubuntu) |
-| 6 | 커스텀 이미지 빌드 | | | [#10](#10-dockerfile-기반-커스텀-이미지-제작) |
-| 7 | 포트 매핑 접속 | | | [#11](#11-포트-매핑-및-접속-증거) |
-| 8 | 바인드 마운트 반영 | | | [#12](#12-바인드-마운트-반영-검증) |
-| 9 | 볼륨 영속성 | | | [#13](#13-docker-볼륨-영속성-검증) |
-| 10 | Git / GitHub 연동 | | | [#14](#14-git-설정-및-github--vscode-연동) |
+### 1) `orbstack` 명령어를 찾을 수 없음
+- **문제**: `orbstack --version` 실행 시 `zsh: command not found: orbstack`
+- **원인 가설**: OrbStack의 CLI 실행 파일명이 앱 이름과 다를 것으로 추정
+- **확인**: `which orbctl` → `/usr/local/bin/orbctl` 확인
+- **해결**: `orbctl version` 사용 → `Version: 2.1.3` 정상 출력 확인
 
----
+### 2) `git push` 시 "src refspec main does not match any"
+- **문제**: `git push origin main` 실행 시 `error: src refspec main does not match any`
+- **원인 가설**: 로컬 기본 브랜치가 `main`이 아니라 `master`로 생성되어 있었음
+- **확인**: `git branch` → `* master`만 존재
+- **해결**: `git branch -M main`으로 브랜치명을 변경한 뒤 재푸시
 
-## 16. 트러블슈팅
+### 3) HTTPS 비밀번호 인증 거부 및 토큰 노출
+- **문제**: `git push` 시 `remote: Invalid username or token. Password authentication is not supported for Git operations.`
+- **원인 가설**: GitHub가 HTTPS 계정 비밀번호 인증을 지원하지 않고 Personal Access Token(PAT) 입력을 요구함
+- **확인**: 비밀번호 입력란에 PAT를 입력해야 정상 인증됨
+- **해결/대안**: PAT 발급 후 사용 — 단, 이 과정에서 토큰이 로그에 그대로 캡처되어 노출됨. **재발급 완료**. (권장 대안: [보너스 10] SSH 키 방식을 쓰면 토큰이 터미널에 노출될 위험 자체가 줄어듦)
 
-> 최소 2건. 각 건은 **문제 → 원인 가설 → 확인 → 해결/대안** 순서로 작성.
+### 4) `docker exec`에서 "bash: executable file not found"
+- **문제**: `docker exec volume-test bash -c '...'` 실행 시 `exec: "bash": executable file not found in $PATH`
+- **원인 가설**: alpine 계열 이미지에는 기본적으로 `bash`가 없고 `sh`(BusyBox ash)만 포함됨
+- **확인**: 같은 명령을 `sh -c`로 바꿔 실행하니 정상 동작
+- **해결**: alpine 기반 이미지에서는 `bash` 대신 `sh` 사용 → 이후 볼륨 영속성 테스트를 `sh`로 재시도해 성공([7번](#7-바인드-마운트--볼륨-영속성-검증))
 
-### 트러블슈팅 1: _(제목 작성)_
+### 5) Dockerfile 빌드 시 `COPY package.json .` 실패
+- **문제**: `docker build` 중 `ERROR: ... "/package.json": not found`
+- **원인 가설**: `package.json`을 만들기 전에 먼저 빌드를 실행함
+- **확인**: `echo '{"name": "my-node-app", ...}' > package.json`으로 파일 생성 후 재빌드하니 `11/11 FINISHED`로 성공
+- **해결/대안**: 빌드 전 필요한 파일이 실제로 존재하는지 먼저 확인하는 습관화. 이때 새로 만든 `package.json`에는 `scripts.start`가 없어서, `CMD`도 `npm start` 대신 `["node", "app.js"]`로 직접 지정하도록 함께 수정함.
 
-- **발생 상황**: _(작성)_
-- **에러 메시지 / 증상**
-
-```bash
-
-```
-
-- **원인 가설**
-  1. _(작성)_
-  2. _(작성)_
-- **확인 과정**
-
-```bash
-
-```
-
-- **해결 / 대안**: _(작성)_
-- **배운 점**: _(작성)_
-
-### 트러블슈팅 2: _(제목 작성)_
-
-- **발생 상황**: _(작성)_
-- **에러 메시지 / 증상**
-
-```bash
-
-```
-
-- **원인 가설**
-  1. _(작성)_
-  2. _(작성)_
-- **확인 과정**
-
-```bash
-
-```
-
-- **해결 / 대안**: _(작성)_
-- **배운 점**: _(작성)_
-
-### 트러블슈팅 3 (선택): _(제목 작성)_
-
-_(작성)_
+### 6) OrbStack 데몬 연결 끊김
+- **문제**: `docker info`/`docker run` 실행 중 `failed to connect to the docker API at unix:///.../docker.sock ... no such file or directory`
+- **원인 가설**: OrbStack 앱이 백그라운드에서 일시적으로 종료되었거나 재시작 중이었을 것으로 추정
+- **확인**: 잠시 후 동일 명령을 재시도하니 정상 응답
+- **해결/대안**: OrbStack 앱 상태를 확인하고 필요시 재실행 후 재시도
 
 ---
 
-## 17. 학습 정리 (과제 목표 질문 답변)
+## 10. 보너스 과제 (선택)
 
-> 과제 목표에 명시된 6가지 질문. 각 항목은 **정의 → 예시 → 이 미션에서 직접 확인한 근거** 순으로 작성.
-
-### Q1. 절대 경로와 상대 경로의 차이를 예시를 들어 설명하시오.
-
-- 정의: _(작성)_
-- 예시: _(작성)_
-- 직접 확인한 근거: _(작성 / 링크 → [#5.7](#57-절대-경로--상대-경로-비교-실습))_
-
-### Q2. 파일 권한의 의미(r/w/x)와 755, 644 같은 표기의 해석 규칙을 설명하시오.
-
-- r / w / x 의 의미 (파일 기준 / 디렉토리 기준): _(작성)_
-- 소유자·그룹·기타 3자리 구조: _(작성)_
-- 755 / 644 해석: _(작성)_
-- 직접 확인한 근거: _(작성 / 링크 → [#6](#6-파일디렉토리-권한-실습))_
-
-### Q3. 기존 Dockerfile을 기반으로 커스텀 이미지를 만드는 방법을 설명하시오.
-
-- 베이스 이미지 선택 → 커스텀 → 빌드 흐름: _(작성)_
-- 사용한 주요 지시어(FROM / COPY / ENV / EXPOSE / CMD 등)의 역할: _(작성)_
-- 직접 확인한 근거: _(작성 / 링크 → [#10](#10-dockerfile-기반-커스텀-이미지-제작))_
-
-### Q4. 포트 매핑이 필요한 이유를 설명하시오.
-
-- 컨테이너 네트워크 격리: _(작성)_
-- `-p host:container` 의 동작: _(작성)_
-- 직접 확인한 근거: _(작성 / 링크 → [#11](#11-포트-매핑-및-접속-증거))_
-
-### Q5. Docker 볼륨(영속 데이터)을 설명하시오.
-
-- 컨테이너 레이어의 휘발성: _(작성)_
-- 볼륨의 역할과 바인드 마운트와의 차이: _(작성)_
-- 직접 확인한 근거: _(작성 / 링크 → [#13](#13-docker-볼륨-영속성-검증))_
-
-### Q6. Git과 GitHub의 역할 차이를 설명하시오.
-
-- Git(로컬 버전관리): _(작성)_
-- GitHub(원격 협업 플랫폼): _(작성)_
-- 직접 확인한 근거: _(작성 / 링크 → [#14](#14-git-설정-및-github--vscode-연동))_
-
-### Q7. (추가) "내 컴퓨터에서만 돌아가는 문제"를 이 구성이 어떻게 줄이는가?
-
-_(작성)_
-
----
-
-## 18. 보너스 과제 (선택)
-
-> 수행하지 않은 항목은 섹션째 삭제해도 됩니다.
-
-### 18.1 Docker Compose 기초 (단일 서비스)
-
-```yaml
-# docker-compose.yml
-
-```
+- [ ] Compose 단일 서비스 / 멀티 컨테이너 + 통신 확인
+- [ ] Compose 운영 명령 (`up`/`down`/`ps`/`logs`)
+- [ ] 환경 변수로 포트/모드 주입
+- [ ] GitHub SSH 키 등록 및 푸시
 
 ```bash
-$ docker compose up -d
-$ docker compose ps
+# 수행한 항목만 명령 + 출력
 
 ```
-
-_(배움 포인트: 실행 명령이 "문서화된 실행 설정"으로 바뀌는 이유)_ — _(작성)_
-
-### 18.2 Docker Compose 멀티 컨테이너 + 컨테이너 간 통신
-
-```yaml
-
-```
-
-```bash
-# 컨테이너 간 통신 확인 (예: docker compose exec web ping db / curl http://<서비스명>:<포트>)
-
-```
-
-_(배움 포인트: 네트워크 / 서비스 디스커버리)_ — _(작성)_
-
-### 18.3 Compose 운영 명령 (up / down / ps / logs)
-
-```bash
-$ docker compose up -d
-$ docker compose ps
-$ docker compose logs
-$ docker compose down
-
-```
-
-_(배움 포인트: 운영 관점의 상태 확인 루틴)_ — _(작성)_
-
-### 18.4 환경 변수 활용 (설정과 코드의 분리)
-
-```bash
-# ENV / -e / .env 로 포트·모드를 바꿔 실행한 로그
-
-```
-
-_(배움 포인트)_ — _(작성)_
-
-### 18.5 GitHub SSH 키 설정
-
-```bash
-$ ssh-keygen -t ed25519 -C "..."     # 공개키만 기록, 개인키 절대 금지
-$ ssh -T git@github.com
-$ git remote set-url origin git@github.com:<계정>/<저장소>.git
-$ git push
-
-```
-
-_(배움 포인트: HTTPS vs SSH 인증 방식 차이)_ — _(작성)_
-
----
-
-## 19. 보안 및 개인정보 보호 점검
-
-- [ ] README / 로그 / 스크린샷에 토큰·비밀번호·개인키·인증 코드가 없는지 확인
-- [ ] 커밋 히스토리에 민감정보가 포함되지 않았는지 확인
-- [ ] `.gitignore` 에 `.env`, 키 파일 등 제외 설정
-- [ ] 스크린샷 내 계정 정보·경로 마스킹 확인
-
-마스킹 규칙: _(작성: 예 — 토큰은 `ghp_****`, 이메일은 `p****@****.com` 형태로 표기)_
-
-노출 사고 발생 시 조치 기록 (해당 시): _(작성)_
-
----
-
-## 20. 재현 방법 (평가자용)
-
-```bash
-# 1) 저장소 클론
-git clone <저장소 URL>
-cd <저장소명>
-
-# 2) 이미지 빌드
-
-# 3) 컨테이너 실행
-
-# 4) 접속 확인
-
-# 5) 볼륨 영속성 확인
-
-# 6) 정리
-```
-
-**특정 PC 환경 의존 사항 및 대체 방법**
-
-| 의존 항목 | 내 환경 | 다른 환경에서의 대체 방법 / 주의사항 |
-| --- | --- | --- |
-| _(예: OrbStack 사용)_ | | |
-| _(예: 절대 경로 마운트)_ | | |
-| _(예: 포트 충돌)_ | | |
-
----
-
-## 21. 회고
-
-- 가장 어려웠던 점: _(작성)_
-- 새로 알게 된 개념: _(작성)_
-- 다음에 확장해보고 싶은 것 (CI/CD, 클라우드 배포 등): _(작성)_
-
----
-
-## 참고 자료
-
-- _(작성)_s
-yes
+this is a new version
