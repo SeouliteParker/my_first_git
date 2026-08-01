@@ -18,7 +18,7 @@
 
 ## 0. 진행 타임라인
 
-이 미션은 하루 만에 끝난 게 아니라, 3일에 걸쳐 "시도 → 실패 → 원인 파악 → 재시도"를 반복하며 완성했습니다. 그 과정 자체가 "왜 이런 설계가 필요한지"를 몸으로 익히는 과정이었기 때문에, 최종 결과물만 보여주기보다 흐름을 남겨둡니다.
+이 과제는 하루 만에 끝난 것이 아니라, 3일에 걸쳐 "시도 → 실패 → 원인 파악 → 재시도"를 반복하며 진행함. 최종 결과물만이 아니라 그 과정에서 각 설계가 왜 필요한지를 함께 확인했기 때문에, 진행 흐름을 아래에 기록함.
 
 **1일차 — 터미널 기초 다지기**
 `git_projects` 폴더 하나를 만들어 놓고 `pwd`/`ls -la`/`mkdir`/`touch`/`cp`/`mv`/`rm`부터 `chmod`까지 한 디렉토리 안에서 전부 실습함. 절대경로·상대경로로 같은 위치를 서로 다른 방식으로 이동해보고, `rm testfolder`가 "is a directory" 에러를 내는 것도 직접 겪어봄 (→ [3번](#3-터미널-조작--권한-실습)).
@@ -35,7 +35,7 @@
 ## 1. 개요 및 실행 환경
 
 - **미션 목표**: 터미널·Docker(OrbStack)·Git/GitHub를 직접 세팅하여, 팀원 누구나 동일하게 실행·배포·디버깅할 수 있는 재현 가능한 개발 워크스테이션을 구축한다.
-- **저장소 링크**: https://github.com/SeouliteParker/my_first_git
+- **저장소 링크**: https://github.com/SeouliteParker/my_first_git (원래 이름 `Codyssey`에서 변경됨)
 - **구성**: `README.md`, `Dockerfile`, `app/`(웹서버 소스: `app.js`, `package.json`), `docs/images/`(스크린샷)
 
 | OS | 아키텍처 | 쉘 | 컨테이너 런타임 | Docker | Git |
@@ -60,7 +60,7 @@ $ git --version
 git version 2.53.0
 ```
 
-> **OrbStack 사용**: `sudo` 권한 제약으로 Docker Desktop 직접 설치 대신 OrbStack을 사용함. CLI 명령은 `orbstack`이 아니라 `orbctl`이며, `docker` 명령은 설치 후 그대로 사용 가능(`docker info`의 `Operating System: OrbStack`으로 확인됨). OrbStack은 macOS 위에 경량 리눅스 VM을 띄우고 그 안에서 Docker 데몬을 구동하는 방식이라, 사용자 입장에서는 `sudo` 없이 일반 사용자 권한만으로 `docker` 명령을 그대로 쓸 수 있음. 자세한 경위는 [9. 트러블슈팅 #1](#9-트러블슈팅) 참고.
+> **(서울캠퍼스) OrbStack 사용**: `sudo` 권한 제약으로 Docker Desktop 직접 설치 대신 OrbStack을 사용함. CLI 명령은 `orbstack`이 아니라 `orbctl`이며, `docker` 명령은 설치 후 그대로 사용 가능(`docker info`의 `Operating System: OrbStack`으로 확인됨). OrbStack은 macOS 위에 경량 리눅스 VM을 띄우고 그 안에서 Docker 데몬을 구동하는 방식이라, 사용자 입장에서는 `sudo` 없이 일반 사용자 권한만으로 `docker` 명령을 그대로 쓸 수 있음. 자세한 경위는 [9. 트러블슈팅 #1](#9-트러블슈팅) 참고.
 
 **PC 종속 설정/경로 및 대체 방법**: 홈 디렉토리 경로가 `/Users/zukrass3800/...` 형태로 macOS 고유 경로임. 다른 macOS 환경에서는 계정명만 다르면 동일하게 재현 가능. Linux 환경이라면 `/home/<사용자명>` 경로로, OrbStack 대신 Docker Engine을 직접 설치한 환경이라면 `orbctl` 관련 언급만 건너뛰면 나머지 `docker` 명령은 동일하게 동작함.
 
@@ -461,7 +461,7 @@ $ git add .
 $ git commit -m "Rename READ.md to README.md"
 [master 533b319] Rename READ.md to README.md
 
-$ git remote add origin https://github.com/SeouliteParker/Codyssey.git
+$ git remote add origin https://github.com/SeouliteParker/Codyssey.git   # 이후 저장소 이름을 my_first_git으로 변경함
 $ git branch -M main
 $ git push -u origin main
 remote: Invalid username or token. Password authentication is not supported for Git operations.
@@ -484,7 +484,7 @@ $ git log --oneline
 
 → `Your branch is up to date with 'origin/main'`과 `git log`에 `origin/main`이 로컬 `HEAD`와 같은 커밋을 가리키는 것으로 **push가 정상적으로 성공했음을 확인**함.
 
-> **🚨 보안 경고**: 위 과정에서 실제 GitHub Personal Access Token이 그대로 캡처되었습니다. **해당 토큰은 반드시 폐기(revoke) 후 재발급**하세요. HTTPS + PAT 자체는 정상 인증 방법이지만, 토큰 값이 문서에 노출된 이상 폐기가 원칙입니다.
+> **보안 조치**: 위 과정에서 실제 GitHub Personal Access Token이 화면에 그대로 노출되는 실수가 있었음. HTTPS + PAT 자체는 정상적인 인증 방식이지만, 토큰 값이 문서에 노출된 시점에 해당 토큰을 폐기(revoke)하고 재발급함.
 
 **VS Code로 저장소 열기**
 
@@ -493,6 +493,16 @@ $ git log --oneline
 ![VS Code 폴더 구조](docs/images/vscode-open-folder-structure.png)
 
 ![VS Code에서 README.md 열림](docs/images/vscode-explorer-readme.png)
+
+**다른 PC에서 재현하는 방법**: 위 방식(`code ~/my_first_git`)은 로컬에 저장소가 이미 있는 컴퓨터에서만 동작함. 로컬 폴더가 없는 다른 PC(공용PC 등)에서는 GitHub에서 직접 clone하여 여는 방식으로 동일하게 재현 가능함.
+
+```bash
+$ git clone https://github.com/SeouliteParker/my_first_git.git
+$ cd my_first_git
+$ code .
+```
+
+저장소가 공개(public)이므로 이 과정에는 VS Code에 GitHub 계정 로그인이 필요 없음. 계정 로그인은 `git push`처럼 저장소에 직접 쓰기 작업을 할 때만 요구됨.
 
 **VSCode ↔ GitHub 연동**: VS Code 좌측 하단 계정 메뉴에 GitHub 계정이 연결되어 있고 Settings Sync가 켜져 있음을 확인.
 
@@ -554,9 +564,50 @@ Git과 GitHub는 종종 같은 것처럼 취급되지만 역할이 다름:
 - [ ] Compose 단일 서비스 / 멀티 컨테이너 + 통신 확인
 - [ ] Compose 운영 명령 (`up`/`down`/`ps`/`logs`)
 - [ ] 환경 변수로 포트/모드 주입
-- [ ] GitHub SSH 키 등록 및 푸시
+- [x] GitHub SSH 키 생성
+
+### GitHub SSH 키 설정
 
 ```bash
-# 수행한 항목만 명령 + 출력
+$ cd ~/my_first_git
+$ git log --oneline
+95e09b4 (HEAD -> main, origin/main, origin/HEAD) 변경
+62e42f5 불필요한 문구 삭제
+5e3d6ff Update README
+d359ed3 ADD new README
+e08a308 Rename README.md to git
+533b319 Rename READ.md to README.md
+5fdc615 Initial commit: Add README.md
 
+$ ls -la ~/.ssh/
+total 8
+drwxr-xr-x   3 zukrass3800  zukrass3800   96  8  1 08:40 .
+drwxr-x---+ 23 zukrass3800  zukrass3800  736  8  1 14:44 ..
+-rw-r--r--   1 zukrass3800  zukrass3800  210  8  1 08:40 config
+
+$ ssh-keygen -t ed25519 -C "your_email@example.com"
+Generating public/private ed25519 key pair.
+Enter file in which to save the key (/Users/zukrass3800/.ssh/id_ed25519):
+Enter passphrase for "/Users/zukrass3800/.ssh/id_ed25519" (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /Users/zukrass3800/.ssh/id_ed25519
+Your public key has been saved in /Users/zukrass3800/.ssh/id_ed25519.pub
+The key fingerprint is:
+SHA256:4lctugtmh1lGZVv4ddlS7Oe+6I8UBdbr/vj7hsI6mVI your_email@example.com
+
+$ ls -la ~/.ssh
+total 24
+drwxr-xr-x   5 zukrass3800  zukrass3800  160  8  1 14:52 .
+drwxr-x---+ 23 zukrass3800  zukrass3800  736  8  1 14:44 ..
+-rw-r--r--   1 zukrass3800  zukrass3800  210  8  1 08:40 config
+-rw-------   1 zukrass3800  zukrass3800  419  8  1 14:52 id_ed25519
+-rw-r--r--   1 zukrass3800  zukrass3800  104  8  1 14:52 id_ed25519.pub
+
+$ git remote -v
+origin  https://github.com/SeouliteParker/my_first_git.git (fetch)
+origin  https://github.com/SeouliteParker/my_first_git.git (push)
 ```
+
+`ssh-keygen -t ed25519`로 개인키(`id_ed25519`)와 공개키(`id_ed25519.pub`) 한 쌍을 생성함. 개인키는 권한이 `-rw-------`(600)로 소유자만 읽고 쓸 수 있도록 제한되어 있고, 공개키는 `-rw-r--r--`(644)로 다른 사용자도 읽을 수 있음 — 이 차이가 SSH 키 방식의 핵심으로, 공개키는 GitHub 서버에 등록해 공유하고 개인키는 로컬 컴퓨터 밖으로 절대 유출되지 않아야 하는 구조임.
+
+`git remote -v` 확인 결과 현재 origin은 아직 HTTPS 주소(`https://github.com/...`)로 남아있어, 이후 GitHub 계정 설정에 공개키(`id_ed25519.pub`)를 등록하고 `git remote set-url origin git@github.com:SeouliteParker/my_first_git.git`으로 전환하는 절차가 남아있음. HTTPS + PAT 방식은 [9번-3](#9-트러블슈팅)에서 겪은 것처럼 터미널에 토큰 값이 노출될 위험이 있는 반면, SSH 키 방식은 인증 정보가 키 파일 형태로 로컬에만 존재해 그런 노출 위험 자체가 구조적으로 줄어듦.
