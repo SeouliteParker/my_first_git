@@ -35,7 +35,7 @@
 ## 1. 개요 및 실행 환경
 
 - **미션 목표**: 터미널·Docker(OrbStack)·Git/GitHub를 직접 세팅하여, 팀원 누구나 동일하게 실행·배포·디버깅할 수 있는 재현 가능한 개발 워크스테이션을 구축한다.
-- **저장소 링크**: https://github.com/SeouliteParker/Codyssey
+- **저장소 링크**: https://github.com/SeouliteParker/my_first_git
 - **구성**: `README.md`, `Dockerfile`, `app/`(웹서버 소스: `app.js`, `package.json`), `docs/images/`(스크린샷)
 
 | OS | 아키텍처 | 쉘 | 컨테이너 런타임 | Docker | Git |
@@ -60,7 +60,7 @@ $ git --version
 git version 2.53.0
 ```
 
-> **(서울캠퍼스) OrbStack 사용**: `sudo` 권한 제약으로 Docker Desktop 직접 설치 대신 OrbStack을 사용함. CLI 명령은 `orbstack`이 아니라 `orbctl`이며, `docker` 명령은 설치 후 그대로 사용 가능(`docker info`의 `Operating System: OrbStack`으로 확인됨). OrbStack은 macOS 위에 경량 리눅스 VM을 띄우고 그 안에서 Docker 데몬을 구동하는 방식이라, 사용자 입장에서는 `sudo` 없이 일반 사용자 권한만으로 `docker` 명령을 그대로 쓸 수 있음. 자세한 경위는 [9. 트러블슈팅 #1](#9-트러블슈팅) 참고.
+> **OrbStack 사용**: `sudo` 권한 제약으로 Docker Desktop 직접 설치 대신 OrbStack을 사용함. CLI 명령은 `orbstack`이 아니라 `orbctl`이며, `docker` 명령은 설치 후 그대로 사용 가능(`docker info`의 `Operating System: OrbStack`으로 확인됨). OrbStack은 macOS 위에 경량 리눅스 VM을 띄우고 그 안에서 Docker 데몬을 구동하는 방식이라, 사용자 입장에서는 `sudo` 없이 일반 사용자 권한만으로 `docker` 명령을 그대로 쓸 수 있음. 자세한 경위는 [9. 트러블슈팅 #1](#9-트러블슈팅) 참고.
 
 **PC 종속 설정/경로 및 대체 방법**: 홈 디렉토리 경로가 `/Users/zukrass3800/...` 형태로 macOS 고유 경로임. 다른 macOS 환경에서는 계정명만 다르면 동일하게 재현 가능. Linux 환경이라면 `/home/<사용자명>` 경로로, OrbStack 대신 Docker Engine을 직접 설치한 환경이라면 `orbctl` 관련 언급만 건너뛰면 나머지 `docker` 명령은 동일하게 동작함.
 
@@ -560,4 +560,3 @@ Git과 GitHub는 종종 같은 것처럼 취급되지만 역할이 다름:
 # 수행한 항목만 명령 + 출력
 
 ```
-this is a new version
